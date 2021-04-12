@@ -15,7 +15,6 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 import numpy as np
 from numpy.random import random_sample
 import math
-from copy import deepcopy
 
 from random import randint, random
 
