@@ -71,9 +71,8 @@ class ParticleFilter:
         self.odom_frame = "odom"
         self.scan_topic = "scan"
 
-        # inialize our map and occupancy field
+        # inialize our map
         self.map = OccupancyGrid()
-
 
         # the number of particles used in the particle filter
         self.num_particles = 10000
