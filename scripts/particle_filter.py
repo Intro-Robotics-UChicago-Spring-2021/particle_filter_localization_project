@@ -6,6 +6,7 @@ from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Quaternion, Point, Pose, PoseArray, PoseStamped
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header, String
+from likelihood_field import LikelihoodField
 
 import tf
 from tf import TransformListener
@@ -33,12 +34,11 @@ def get_yaw_from_pose(p):
     return yaw
 
 
-def draw_random_sample():
+def draw_random_sample(n, upper, lower):
     """ Draws a random sample of n elements from a given list of choices and their specified probabilities.
     We recommend that you fill in this function using random_sample.
     """
-    # TODO
-    return
+    return (upper - lower) * random_sample(n) + lower
 
 
 class Particle:
@@ -50,15 +50,7 @@ class Particle:
 
         # particle weight
         self.w = w
-
-    def __str__(self):
-        theta = euler_from_quaternion([
-            self.pose.orientation.x, 
-            self.pose.orientation.y, 
-            self.pose.orientation.z, 
-            self.pose.orientation.w])[2]
-        return ("Particle: [" + str(self.pose.position.x) + ", " + str(self.pose.position.y) + ", " + str(theta) + "]")
-
+              
 
 class ParticleFilter:
 
@@ -80,6 +72,9 @@ class ParticleFilter:
 
         # inialize our map
         self.map = OccupancyGrid()
+
+        # create LikelihoodField object
+        self.likelihood_field = LikelihoodField()
 
         # the number of particles used in the particle filter
         self.num_particles = 10000
@@ -129,15 +124,26 @@ class ParticleFilter:
     
 
     def initialize_particle_cloud(self):
+
+        boundaries = self.likelihood_field.get_obstacle_bounding_box()
+        x_lower = boundaries[0][0]
+        x_upper = boundaries[0][1]
+        y_lower = boundaries[1][0]
+        y_upper = boundaries[1][1]
         
         for i in range(self.num_particles):
             p = Pose()
             p.position = Point()
-            p.position.x = # To do
-            p.position.y = # To do
+            p.position.x = draw_random_sample(1, x_upper, x_lower)
+            if p.position.x > 5:
+                p.position.y = draw_random_sample(1, y_upper, y_lower)
+            elif p.position.x < -5:
+                p.position.y = draw_random_sample(1, y_upper, -4)
+            else:
+                p.position.y = draw_random_sample(1, y_upper, 0)
             p.position.z = 0
             p.orientation = Quaternion()
-            q = quaternion_from_euler(0.0, 0.0, #To do)
+            q = quaternion_from_euler(0.0, 0.0, math.radians(360 * random_sample()))
             p.orientation.x = q[0]
             p.orientation.y = q[1]
             p.orientation.z = q[2]
@@ -156,7 +162,7 @@ class ParticleFilter:
         # make all the particle weights sum to 1.0
         
         # TODO
-
+        return
 
 
     def publish_particle_cloud(self):
@@ -185,7 +191,7 @@ class ParticleFilter:
     def resample_particles(self):
 
         # TODO
-
+        return
 
 
     def robot_scan_received(self, data):
@@ -264,13 +270,13 @@ class ParticleFilter:
         # based on the particles within the particle cloud, update the robot pose estimate
         
         # TODO
-
+        return
 
     
     def update_particle_weights_with_measurement_model(self, data):
 
         # TODO
-
+        return
 
         
 
@@ -280,7 +286,7 @@ class ParticleFilter:
         # all of the particles correspondingly
 
         # TODO
-
+        return
 
 
 if __name__=="__main__":
