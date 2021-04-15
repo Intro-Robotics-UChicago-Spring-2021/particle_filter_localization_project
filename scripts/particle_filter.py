@@ -51,6 +51,13 @@ class Particle:
         # particle weight
         self.w = w
 
+    def __str__(self):
+        theta = euler_from_quaternion([
+            self.pose.orientation.x, 
+            self.pose.orientation.y, 
+            self.pose.orientation.z, 
+            self.pose.orientation.w])[2]
+        return ("Particle: [" + str(self.pose.position.x) + ", " + str(self.pose.position.y) + ", " + str(theta) + "]")
 
 
 class ParticleFilter:
@@ -123,8 +130,22 @@ class ParticleFilter:
 
     def initialize_particle_cloud(self):
         
-        # TODO
-
+        for i in range(self.num_particles):
+            p = Pose()
+            p.position = Point()
+            p.position.x = # To do
+            p.position.y = # To do
+            p.position.z = 0
+            p.orientation = Quaternion()
+            q = quaternion_from_euler(0.0, 0.0, #To do)
+            p.orientation.x = q[0]
+            p.orientation.y = q[1]
+            p.orientation.z = q[2]
+            p.orientation.w = q[3]
+            # initialize the new particle, where all will have the same weight (1.0)
+            new_particle = Particle(p, 1.0)
+            # append the particle to the particle cloud
+            self.particle_cloud.append(new_particle)
 
         self.normalize_particles()
 
