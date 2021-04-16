@@ -34,11 +34,26 @@ def get_yaw_from_pose(p):
     return yaw
 
 
-def draw_random_sample(n, upper, lower):
+def draw_random_sample(n, list, prob):
     """ Draws a random sample of n elements from a given list of choices and their specified probabilities.
     We recommend that you fill in this function using random_sample.
     """
-    return (upper - lower) * random_sample(n) + lower
+    prob_indices = []
+
+    for i in range(len(list)):
+        if list[i] == prob:
+            prob_indices.append(int(i))
+
+
+    random_nums = len(prob_indices) * random_sample((n, ))
+    random_nums = random_nums.astype(int)
+
+    list_indices = []
+
+    for i in random_nums:
+        list_indices.append(prob_indices[i])
+    
+    return list_indices
 
 
 class Particle:
@@ -110,6 +125,8 @@ class ParticleFilter:
         self.tf_listener = TransformListener()
         self.tf_broadcaster = TransformBroadcaster()
 
+        # sleep to get map data before initializing particle cloud
+        rospy.sleep(1)
 
         # intialize the particle cloud
         self.initialize_particle_cloud()
@@ -125,22 +142,18 @@ class ParticleFilter:
 
     def initialize_particle_cloud(self):
 
-        boundaries = self.likelihood_field.get_obstacle_bounding_box()
-        x_lower = boundaries[0][0]
-        x_upper = boundaries[0][1]
-        y_lower = boundaries[1][0]
-        y_upper = boundaries[1][1]
+        map_data = self.map.data
+        random_indices = draw_random_sample(self.num_particles, map_data, 0)
+
+        r = self.map.info.resolution
+        x = self.map.info.origin.position.x
+        y = self.map.info.origin.position.y
         
         for i in range(self.num_particles):
             p = Pose()
             p.position = Point()
-            p.position.x = draw_random_sample(1, x_upper, x_lower)
-            if p.position.x > 5:
-                p.position.y = draw_random_sample(1, y_upper, y_lower)
-            elif p.position.x < -5:
-                p.position.y = draw_random_sample(1, y_upper, -4)
-            else:
-                p.position.y = draw_random_sample(1, y_upper, 0)
+            p.position.x = (random_indices[i] % 384) * r + x
+            p.position.y = (random_indices[i] // 384) * r + y
             p.position.z = 0
             p.orientation = Quaternion()
             q = quaternion_from_euler(0.0, 0.0, math.radians(360 * random_sample()))
