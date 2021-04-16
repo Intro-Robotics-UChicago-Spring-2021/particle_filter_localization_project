@@ -51,8 +51,8 @@ def draw_random_sample(n, list, prob):
     random_nums = random_nums.astype(int)
 
     # return randomly chosen elements in prob_indices as a new array, with
-    #   each new element being the index in list that corresponds to a
-    #   coordinate point that is light gray (inside the house)
+    #   each new element being the index in list that corresponds to coordinates
+    #   with a specific color, such as light gray (inside the house)
     list_indices = []
     for i in random_nums:
         list_indices.append(prob_indices[i])
