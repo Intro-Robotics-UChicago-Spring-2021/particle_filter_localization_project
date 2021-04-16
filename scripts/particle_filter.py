@@ -35,21 +35,25 @@ def get_yaw_from_pose(p):
 
 
 def draw_random_sample(n, list, prob):
-    """ Draws a random sample of n elements from a given list of choices and their specified probabilities.
-    We recommend that you fill in this function using random_sample.
-    """
-    prob_indices = []
+    """ Draws a random sample of n elements from a given list of choices 
+    and their specified probabilities. We recommend that you fill in this 
+    function using random_sample. """
 
+    # get an array of numbers that correspond to indices in the list with 
+    #   a specific prob value
+    prob_indices = []
     for i in range(len(list)):
         if list[i] == prob:
             prob_indices.append(int(i))
 
-
+    # randomly sample n elements as indices to choose from prob_indices
     random_nums = len(prob_indices) * random_sample((n, ))
     random_nums = random_nums.astype(int)
 
+    # return randomly chosen elements in prob_indices as a new array, with
+    #   each new element being the index in list that corresponds to a
+    #   coordinate point that is light gray (inside the house)
     list_indices = []
-
     for i in random_nums:
         list_indices.append(prob_indices[i])
     
@@ -74,7 +78,6 @@ class ParticleFilter:
 
         # once everything is setup initialized will be set to true
         self.initialized = False        
-
 
         # initialize this particle filter node
         rospy.init_node('turtlebot3_particle_filter')
@@ -106,7 +109,6 @@ class ParticleFilter:
 
         self.odom_pose_last_motion_update = None
 
-
         # Setup publishers and subscribers
 
         # publish the current particle cloud
@@ -134,22 +136,28 @@ class ParticleFilter:
         self.initialized = True
 
 
-
     def get_map(self, data):
 
         self.map = data
-    
+
 
     def initialize_particle_cloud(self):
-
+        """ Initialize the particle cloud with random locations and 
+        orientations throughout the house """
+        
+        # get map data and random indices that correspond to coordinates
+        #   with a light gray color (inside the house)
         map_data = self.map.data
         random_indices = draw_random_sample(self.num_particles, map_data, 0)
 
+        # initialize variables to convert from a particle's position to 
+        #   its index on the Occupancy Grid 
         r = self.map.info.resolution
         x = self.map.info.origin.position.x
         y = self.map.info.origin.position.y
         
         for i in range(self.num_particles):
+            # set pose data for particle
             p = Pose()
             p.position = Point()
             p.position.x = (random_indices[i] % 384) * r + x
@@ -190,15 +198,12 @@ class ParticleFilter:
         self.particles_pub.publish(particle_cloud_pose_array)
 
 
-
-
     def publish_estimated_robot_pose(self):
 
         robot_pose_estimate_stamped = PoseStamped()
         robot_pose_estimate_stamped.pose = self.robot_estimate
         robot_pose_estimate_stamped.header = Header(stamp=rospy.Time.now(), frame_id=self.map_topic)
         self.robot_estimate_pub.publish(robot_pose_estimate_stamped)
-
 
 
     def resample_particles(self):
@@ -244,7 +249,6 @@ class ParticleFilter:
             self.odom_pose_last_motion_update = self.odom_pose
             return
 
-
         if self.particle_cloud:
 
             # check to see if we've moved far enough to perform an update
@@ -278,7 +282,6 @@ class ParticleFilter:
                 self.odom_pose_last_motion_update = self.odom_pose
 
 
-
     def update_estimated_robot_pose(self):
         # based on the particles within the particle cloud, update the robot pose estimate
         
@@ -290,7 +293,6 @@ class ParticleFilter:
 
         # TODO
         return
-
         
 
     def update_particles_with_motion_model(self):
@@ -303,7 +305,6 @@ class ParticleFilter:
 
 
 if __name__=="__main__":
-    
 
     pf = ParticleFilter()
 
