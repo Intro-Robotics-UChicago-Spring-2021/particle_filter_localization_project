@@ -282,10 +282,30 @@ class ParticleFilter:
 
     def update_particles_with_motion_model(self):
 
-        # based on the how the robot has moved (calculated from its odometry), we'll  move
-        # all of the particles correspondingly
+        # calculate how the robot has moved
+        curr_x = self.odom_pose.pose.position.x
+        old_x = self.odom_pose_last_motion_update.pose.position.x
+        dx = curr_x - old_x
+        curr_y = self.odom_pose.pose.position.y
+        old_y = self.odom_pose_last_motion_update.pose.position.y
+        dy = curr_y - old_y
+        curr_yaw = get_yaw_from_pose(self.odom_pose.pose)
+        old_yaw = get_yaw_from_pose(self.odom_pose_last_motion_update.pose)
+        dyaw = curr_yaw - old_yaw
 
-        # TODO
+        # move all the particles correspondingly
+        for part in self.particle_cloud:          
+            p = part.pose
+            part.pose.position.x += dx
+            p.position.y += dy
+            new_yaw = get_yaw_from_pose(p) + dyaw
+            q = quaternion_from_euler(0.0, 0.0, new_yaw)
+            p.orientation.x = q[0]
+            p.orientation.y = q[1]
+            p.orientation.z = q[2]
+            p.orientation.w = q[3]           
+        self.publish_particle_cloud()
+        
         return
 
 
