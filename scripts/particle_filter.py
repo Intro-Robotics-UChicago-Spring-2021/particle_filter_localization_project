@@ -260,6 +260,14 @@ class ParticleFilter:
 
         # TODO
 
+        for p in self.particle_cloud:
+            p.pose.position.x = p.pose.position.x + (self.curr_x - self.old_x)
+            p.pose.position.y = p.pose.posiiton.y + (self.curr_y - self.old_y)
+            q = quaternion_from_euler(0.0, 0.0, self.curr_yaw - self.old_yaw)
+            p.pose.orientation.x = p.pose.orientation.x + q[0]
+            p.pose.orientation.y = p.pose.orientation.y + q[1]
+            p.pose.orientation.z = p.pose.orientation.z + q[2]
+            p.pose.orientation.w = p.pose.orientation.w + q[3]
 
 
 if __name__=="__main__":
