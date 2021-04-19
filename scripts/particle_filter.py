@@ -120,12 +120,29 @@ class ParticleFilter:
 
         self.map = data
     
+    def get_valid_coords(self):
+        res, width, height = self.map.info.resolution, self.map.info.width, self.map.info.height 
+        grid = self.map.data
+
+        valid_coords = []
+        for i in range(res * width):
+            for j in range(res * height):
+                if grid[i][j] == 100:
+                    valid_coords.append([i, j])
+        return valid_coords
 
     def initialize_particle_cloud(self):
         
         # TODO
-
-
+        sample_xy = self.get_valid_coords()
+        cloud_xy = random.sample(sample_xy, self.num_particles)
+        
+        self.particle_cloud = []
+        for xy in cloud_xy:
+            theta = random.uniform(0, np.pi)
+            xy.append(theta)
+            self.particle_cloud.append(xy)
+        
         self.normalize_particles()
 
         self.publish_particle_cloud()
