@@ -38,8 +38,14 @@ def draw_random_sample():
     We recommend that you fill in this function using random_sample.
     """
     # TODO
-    return
+    weights = []
+    positions = []
+    for p in self.particle_cloud:
+        weights.append(p.w)
+        positions.append(p.pose)
 
+    randomList = random.choices(sampleList, cum_weights=(5, 15, 35, 65, 100), k=5)
+    return randomList
 
 class Particle:
 
@@ -124,8 +130,6 @@ class ParticleFilter:
     def initialize_particle_cloud(self):
         
         # TODO
-
-
         self.normalize_particles()
 
         self.publish_particle_cloud()
@@ -164,8 +168,10 @@ class ParticleFilter:
 
     def resample_particles(self):
 
-        # TODO
-
+        randomList = random_sample()
+        for p in range(len(self.particle_cloud)):
+            self.particle_cloud[p].pose = randomList[p]
+            self.particle_cloud[p].w = 1
 
 
     def robot_scan_received(self, data):
@@ -243,13 +249,34 @@ class ParticleFilter:
     def update_estimated_robot_pose(self):
         # based on the particles within the particle cloud, update the robot pose estimate
         
-        # TODO
+        x_sum = 0 
+        y_sum = 0
+        theta_sum
 
+        for p in self.particle_cloud:
+            x_sum = x_sum + p.pose.position.x
+            y_sum = y_sum + p.pose.position.y
+            theta_sum = theta_sum + euler_from_quaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
+
+        x_aver = x_sum / len(self.particle_cloud)
+        y_aver = y_sum / len(self.particle_cloud)
+        theta_aver = theta_sum / len(self.particle_cloud)
+
+        p = Pose()
+        p.position.x = x_aver
+        p.position.y = y_aver
+        p.position.z = 0
+        q = quaternion_from_euler(0.0, 0.0, theta_aver)
+        p.orientation.x = q[0]
+        p.orientation.y = q[1]
+        p.orientation.z = q[2]
+        p.orientation.w = q[3]
+        self.robot_estimate = p 
 
     
     def update_particle_weights_with_measurement_model(self, data):
 
-        cardinal_directions_idxs = [0, 45 , 90, , 135, 180, 225, 270, 315]
+        cardinal_directions_idxs = [0, 45 , 90, 135, 180, 225, 270, 315]
         for p in self.particle_cloud:
             q = 1
             for idx in cardinal_directions_idxs:
