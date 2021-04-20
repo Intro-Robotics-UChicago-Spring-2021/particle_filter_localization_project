@@ -38,8 +38,14 @@ def draw_random_sample():
     We recommend that you fill in this function using random_sample.
     """
     # TODO
-    return
+    weights = []
+    positions = []
+    for p in self.particle_cloud:
+        weights.append(p.w)
+        positions.append(p.pose)
 
+    randomList = random.choices(sampleList, cum_weights=(5, 15, 35, 65, 100), k=5)
+    return randomList
 
 class Particle:
 
@@ -120,11 +126,41 @@ class ParticleFilter:
 
         self.map = data
     
+    def get_valid_coords(self):
+        res, width, height = self.map.info.resolution, self.map.info.width, self.map.info.height 
+        grid = self.map.data
+
+        valid_coords = []
+        for i in range(res * width):
+            for j in range(res * height):
+                if grid[i][j] == 100:
+                    valid_coords.append((i, j))
+        return valid_coords
 
     def initialize_particle_cloud(self):
         
-        # TODO
+        sample_xy = self.get_valid_coords()
+        cloud_xy = random.sample(sample_xy, self.num_particles)
+        
+        self.particle_cloud = []
+        for xy in cloud_xy:
+            pos_x, pos_y = xy
+            theta = random.uniform(0, np.pi)
+            or_x, or_y, or_z, or_w = quaternion_from_euler(0.0, 0.0, theta)
+            
+            pose = Pose()
+            pose.position.x = pos_x
+            pose.position.y = pos_y
+            pose.position.z = 0
 
+            pose.orientation = Quaternion()
+            pose.orientation.x = or_x
+            pose.orientation.y = or_y
+            pose.orientation.z = or_z
+            pose.orientation.w = or_w
+
+            particle = Particle(pose, 1.0)
+            self.particle_cloud.append(particle)
 
         self.normalize_particles()
 
@@ -133,10 +169,11 @@ class ParticleFilter:
 
     def normalize_particles(self):
         # make all the particle weights sum to 1.0
-        
-        # TODO
-
-
+        sum = 0
+        for p in self.particle_cloud:
+            sum = sum + p.w
+        for p in self.particle_cloud:
+            p.w = p.w / sum
 
     def publish_particle_cloud(self):
 
@@ -163,8 +200,10 @@ class ParticleFilter:
 
     def resample_particles(self):
 
-        # TODO
-
+        randomList = random_sample()
+        for p in range(len(self.particle_cloud)):
+            self.particle_cloud[p].pose = randomList[p]
+            self.particle_cloud[p].w = 1
 
 
     def robot_scan_received(self, data):
@@ -242,16 +281,51 @@ class ParticleFilter:
     def update_estimated_robot_pose(self):
         # based on the particles within the particle cloud, update the robot pose estimate
         
-        # TODO
+        x_sum = 0 
+        y_sum = 0
+        theta_sum
 
+        for p in self.particle_cloud:
+            x_sum = x_sum + p.pose.position.x
+            y_sum = y_sum + p.pose.position.y
+            theta_sum = theta_sum + euler_from_quaternion(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w)
+
+        x_aver = x_sum / len(self.particle_cloud)
+        y_aver = y_sum / len(self.particle_cloud)
+        theta_aver = theta_sum / len(self.particle_cloud)
+
+        p = Pose()
+        p.position.x = x_aver
+        p.position.y = y_aver
+        p.position.z = 0
+        q = quaternion_from_euler(0.0, 0.0, theta_aver)
+        p.orientation.x = q[0]
+        p.orientation.y = q[1]
+        p.orientation.z = q[2]
+        p.orientation.w = q[3]
+        self.robot_estimate = p 
 
     
     def update_particle_weights_with_measurement_model(self, data):
 
-        # TODO
-
-
-        
+        cardinal_directions_idxs = [0, 45 , 90, 135, 180, 225, 270, 315]
+        for p in self.particle_cloud:
+            q = 1
+            for idx in cardinal_directions_idxs:
+                # starting if condition
+                ztk = data.ranges[idx]
+                if ztk > 3.5: continue
+                # boilerplate vars
+                particle_x, particle_y = p.pose.position.x, p.pose.position.y
+                quat_in = [p.pose.orientation.x, p.pose.orientation.y, p.pose.orientation.z, p.pose.orientation.w]
+                theta_z = euler_from_quaternion(quat_in)[2]
+                theta_z += idx * np.pi / 180 # add curr cardinal direction (in rads)
+                # algorithm
+                x_ztk = particle_x + ztk * np.cos(theta_z)
+                y_ztk = particle_y + ztk * np.sin(theta_z)
+                dist = self.likelihood_field.get_closest_obstacle_distance(x_ztk, y_ztk)
+                q = q * compute_prob_zero_centered_gaussian(dist, sd=0.1) # recommended SD
+        p.w = q   
 
     def update_particles_with_motion_model(self):
 
@@ -260,6 +334,14 @@ class ParticleFilter:
 
         # TODO
 
+        for p in self.particle_cloud:
+            p.pose.position.x = p.pose.position.x + (self.curr_x - self.old_x)
+            p.pose.position.y = p.pose.posiiton.y + (self.curr_y - self.old_y)
+            q = quaternion_from_euler(0.0, 0.0, self.curr_yaw - self.old_yaw)
+            p.pose.orientation.x = p.pose.orientation.x + q[0]
+            p.pose.orientation.y = p.pose.orientation.y + q[1]
+            p.pose.orientation.z = p.pose.orientation.z + q[2]
+            p.pose.orientation.w = p.pose.orientation.w + q[3]
 
 
 if __name__=="__main__":
